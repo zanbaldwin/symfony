@@ -273,6 +273,10 @@ class FrameworkExtension extends Extension
             $loader->load('web_link.xml');
         }
 
+        if ($this->isConfigEnabled($container, $config['yaml'])) {
+            $loader->load('yaml.xml');
+        }
+
         $this->addAnnotatedClassesToCompile(array(
             '**\\Controller\\',
             '**\\Entity\\',

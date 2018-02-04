@@ -25,7 +25,9 @@
         "symfony/console": "<3.4"
     },
     "suggest": {
-        "symfony/console": "For validating YAML files using the lint command"
+        "symfony/console": "For validating YAML files using the lint command",
+        "symfony/config": "For using the YAML import transformer",
+        "symfony/property-access": "For using the YAML reference transformer"
     },
     "autoload": {
         "psr-4": { "Symfony\\Component\\Yaml\\": "" },

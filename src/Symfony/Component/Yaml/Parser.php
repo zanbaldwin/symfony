@@ -13,6 +13,7 @@ namespace Symfony\Component\Yaml;
 
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Tag\TaggedValue;
+use Symfony\Component\Yaml\Tag\Transformer\TagTransformerInterface;
 
 /**
  * Parser parses YAML strings to convert them to PHP arrays.
@@ -35,6 +36,7 @@ class Parser
     private $refs = array();
     private $skippedLineNumbers = array();
     private $locallySkippedLineNumbers = array();
+    private $transformers = array();
 
     /**
      * Parses a YAML file into a PHP value.
@@ -56,12 +58,13 @@ class Parser
             throw new ParseException(sprintf('File "%s" cannot be read.', $filename));
         }
 
+        $previousFilename = $this->filename;
         $this->filename = $filename;
 
         try {
             return $this->parse(file_get_contents($filename), $flags);
         } finally {
-            $this->filename = null;
+            $this->filename = $previousFilename;
         }
     }
 
@@ -102,6 +105,10 @@ class Parser
             $this->refs = array();
             $this->skippedLineNumbers = array();
             $this->locallySkippedLineNumbers = array();
+        }
+
+        if ($flags & Yaml::TRANSFORM_TAGGED_VALUES === Yaml::TRANSFORM_TAGGED_VALUES) {
+            $data = $this->doTransform($data, $flags);
         }
 
         return $data;
@@ -1102,5 +1109,39 @@ class Parser
         }
 
         throw new ParseException(sprintf('Tags support is not enabled. You must use the flag `Yaml::PARSE_CUSTOM_TAGS` to use "%s".', $matches['tag']), $this->getRealCurrentLineNb() + 1, $value, $this->filename);
+    }
+
+    public function addTransformer(TagTransformerInterface $transformer, int $priority = 0): void
+    {
+        $this->transformers[$transformer->getName()] = ['transformer' => $transformer, 'priority' => $priority];
+        usort($this->transformers, function (TagTransformerInterface $a, TagTransformerInterface $b): int {
+            return $a['priority'] <=> $b['priority'];
+        });
+    }
+
+    public function removeTransformer(TagTransformerInterface $transformer): void
+    {
+        unset($this->transformers[$transformer->getName()]);
+    }
+
+    /**
+     * @param mixed $data
+     * @param integer $flags
+     * @throws \Symfony\Component\Yaml\Exception\TransformException
+     * @return mixed
+     */
+    private function doTransform($data, int $flags)
+    {
+        if (\is_array($data)) {
+            array_walk_recursive($data, function (&$value) use ($data, $flags) {
+                if ($value instanceof TaggedValue && isset($this->transformers[$value->getTag()])) {
+                    /** @var \Symfony\Component\Yaml\Tag\Transformer\TagTransformerInterface $transformer */
+                    $transformer = $this->transformers[$value->getTag()]['transformer'];
+                    $value = $transformer->transform($value, $data, $flags, $this->filename);
+                }
+            });
+        }
+
+        return $data;
     }
 }

@@ -33,6 +33,7 @@ class Yaml
     const PARSE_CONSTANT = 256;
     const PARSE_CUSTOM_TAGS = 512;
     const DUMP_EMPTY_ARRAY_AS_SEQUENCE = 1024;
+    const TRANSFORM_TAGGED_VALUES = 2048 | self::PARSE_CUSTOM_TAGS;
 
     /**
      * Parses a YAML file into a PHP value.

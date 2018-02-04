@@ -101,6 +101,7 @@ class Configuration implements ConfigurationInterface
         $this->addPhpErrorsSection($rootNode);
         $this->addWebLinkSection($rootNode);
         $this->addLockSection($rootNode);
+        $this->addYamlSection($rootNode);
 
         return $treeBuilder;
     }
@@ -898,6 +899,30 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('web_link')
                     ->info('web links configuration')
                     ->{!class_exists(FullStack::class) && class_exists(HttpHeaderSerializer::class) ? 'canBeDisabled' : 'canBeEnabled'}()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addYamlSection(ArrayNodeDefinition $rootNode)
+    {
+        $rootNode
+            ->children()
+                ->arrayNode('yaml')
+                    ->info('Symfony YAML Component settings')
+                    ->canBeEnabled()
+                    ->beforeNormalization()
+                        ->ifTrue(function ($v) { return \is_scalar($v); })
+                        ->then(function ($v) { return ['enabled' => (bool) $v, 'register_transformers' => (bool) $v]; })
+                    ->end()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->info('Expose YAML parser as a dependency injection service?')->end()
+                        ->booleanNode('register_transformers')->defaultFalse()->info('Automatically register default Symfony YAML tag transformers?')->end()
+                    ->end()
+                    ->validate()
+                        ->ifTrue(function ($v) { return !$v['enabled'] && $v['register_transformers']; })
+                        ->thenInvalid('Cannot register default Symfony tag transformers when YAML is disabled.')
+                    ->end()
                 ->end()
             ->end()
         ;

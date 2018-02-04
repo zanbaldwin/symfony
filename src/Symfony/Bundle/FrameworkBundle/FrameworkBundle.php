@@ -25,6 +25,7 @@ use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\AddExpressionLan
 use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\ContainerBuilderDebugDumpPass;
 use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\UnusedTagsPass;
 use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\WorkflowGuardListenerPass;
+use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\YamlTransformerPass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\DependencyInjection\AddConsoleCommandPass;
 use Symfony\Component\HttpKernel\DependencyInjection\ControllerArgumentValueResolverPass;
@@ -113,6 +114,7 @@ class FrameworkBundle extends Bundle
         $container->addCompilerPass(new CachePoolPrunerPass(), PassConfig::TYPE_AFTER_REMOVING);
         $this->addCompilerPassIfExists($container, FormPass::class);
         $container->addCompilerPass(new WorkflowGuardListenerPass());
+        $container->addCompilerPass(new YamlTransformerPass());
         $container->addCompilerPass(new ResettableServicePass());
 
         if ($container->getParameter('kernel.debug')) {
