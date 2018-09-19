@@ -1105,7 +1105,7 @@ class Form implements \IteratorAggregate, FormInterface
     {
         $transformers = $this->config->getViewTransformers();
 
-        if (!$transformers) {
+        if (!$transformers && !$this->config->getOption('preserve_empty_strings', false)) {
             return '' === $value ? null : $value;
         }
 
