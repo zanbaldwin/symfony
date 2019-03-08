@@ -25,6 +25,14 @@ class Kernel extends BaseKernel
         }
     }
 
+    protected function build(ContainerBuilder $container): void
+    {
+        $container
+            ->registerForAutoconfiguration(MyInterface::class)
+            ->setPublic(true);
+        parent::build($container);
+    }
+
     protected function configureContainer(ContainerBuilder $container, LoaderInterface $loader): void
     {
         $container->addResource(new FileResource($this->getProjectDir().'/config/bundles.php'));
