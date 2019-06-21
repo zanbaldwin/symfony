@@ -1483,6 +1483,7 @@ class FrameworkExtension extends Extension
             $config['default_bus'] = key($config['buses']);
         }
 
+        $autoConfiguration = [];
         $defaultMiddleware = [
             'before' => [
                 ['id' => 'add_bus_name_stamp_middleware'],
@@ -1495,6 +1496,11 @@ class FrameworkExtension extends Extension
             ],
         ];
         foreach ($config['buses'] as $busId => $bus) {
+            if (!isset($autoConfiguration[$bus[Configuration::AUTOCONFIGURE_INTERFACE_OPTION]])) {
+                $autoConfiguration[$bus[Configuration::AUTOCONFIGURE_INTERFACE_OPTION]] = [];
+            }
+            $autoConfiguration[$bus[Configuration::AUTOCONFIGURE_INTERFACE_OPTION]][] = $busId;
+
             $middleware = $bus['middleware'];
 
             if ($bus['default_middleware']) {
@@ -1529,6 +1535,10 @@ class FrameworkExtension extends Extension
             } else {
                 $container->registerAliasForArgument($busId, MessageBusInterface::class);
             }
+        }
+
+        foreach ($autoConfiguration as $interface => $busIds) {
+            $container->registerForAutoconfiguration($interface)->addTag('messenger.message_handler', ['bus' => $busIds]);
         }
 
         if (empty($config['transports'])) {

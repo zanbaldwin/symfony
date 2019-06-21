@@ -26,6 +26,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 use Symfony\Component\Serializer\Serializer;
@@ -41,6 +42,8 @@ use Symfony\Component\WebLink\HttpHeaderSerializer;
  */
 class Configuration implements ConfigurationInterface
 {
+    public const AUTOCONFIGURE_INTERFACE_OPTION = 'handler_interface';
+
     private $debug;
 
     /**
@@ -1090,6 +1093,19 @@ class Configuration implements ConfigurationInterface
                                     ->enumNode('default_middleware')
                                         ->values([true, false, 'allow_no_handlers'])
                                         ->defaultTrue()
+                                    ->end()
+                                    ->scalarNode(self::AUTOCONFIGURE_INTERFACE_OPTION)
+                                        ->info('Specify the interface to autoconfigure message handler registration to this message bus.')
+                                        ->defaultValue(MessageHandlerInterface::class)
+                                        ->validate()
+                                            ->ifTrue(function ($interface): bool {
+                                                return !interface_exists($interface) || !is_a($interface, MessageHandlerInterface::class, true);
+                                            })
+                                            ->thenInvalid(sprintf(
+                                                'Message Bus autoconfiguration requires a valid interface extending %s to be specified.',
+                                                MessageHandlerInterface::class
+                                            ))
+                                        ->end()
                                     ->end()
                                     ->arrayNode('middleware')
                                         ->beforeNormalization()

@@ -75,8 +75,11 @@ class MessengerPass implements CompilerPassInterface
 
         foreach ($container->findTaggedServiceIds($this->handlerTag, true) as $serviceId => $tags) {
             foreach ($tags as $tag) {
-                if (isset($tag['bus']) && !\in_array($tag['bus'], $busIds, true)) {
-                    throw new RuntimeException(sprintf('Invalid handler service "%s": bus "%s" specified on the tag "%s" does not exist (known ones are: %s).', $serviceId, $tag['bus'], $this->handlerTag, implode(', ', $busIds)));
+                $handlerBuses = (array) ($tag['bus'] ?? $busIds);
+                foreach ($handlerBuses as $handlerBus) {
+                    if (!\in_array($handlerBus, $busIds, true)) {
+                        throw new RuntimeException(sprintf('Invalid handler service "%s": bus "%s" specified on the tag "%s" does not exist (known ones are: %s).', $serviceId, $handlerBus, $this->handlerTag, implode(', ', $busIds)));
+                    }
                 }
 
                 $className = $container->getDefinition($serviceId)->getClass();
@@ -93,7 +96,6 @@ class MessengerPass implements CompilerPassInterface
                 }
 
                 $message = null;
-                $handlerBuses = (array) ($tag['bus'] ?? $busIds);
 
                 foreach ($handles as $message => $options) {
                     $buses = $handlerBuses;
